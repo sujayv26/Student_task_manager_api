@@ -51,26 +51,23 @@ Detailed prompts, tool responses, evaluations, and screenshots are available in 
 Student_task_manager_api/
 │
 ├── app/
-│   ├── __init__.py
-│   ├── database.py
-│   ├── errors.py
-│   ├── main.py
-│   ├── models.py
-│   └── schemas.py
+│   ├── __init__.py          # Package initialization
+│   ├── database.py          # SQLite engine & SQLAlchemy session setup
+│   ├── errors.py            # Unified error response & custom exception handlers
+│   ├── main.py              # FastAPI application, routes, and CRUD endpoints
+│   ├── models.py            # SQLAlchemy ORM Task model
+│   └── schemas.py           # Pydantic schemas for request validation & response models
 │
 ├── tests/
-│   ├── __init__.py
-│   ├── conftest.py
-│   ├── test_api.py
-│   └── test_errors.py
+│   ├── __init__.py          # Test suite package initialization
+│   ├── conftest.py          # Pytest fixtures, test database setup, and TestClient
+│   ├── test_api.py          # Comprehensive tests for CRUD operations & validations
+│   └── test_errors.py       # Unit tests for custom exception handlers & error structures
 │
-├── docs/
-│   └── ...
-│
-├── .gitignore
-├── pytest.ini
-├── requirements.txt
-└── README.md
+├── .gitignore               # Files and directories ignored by Git
+├── pytest.ini               # Pytest configuration settings
+├── requirements.txt         # Project dependencies (FastAPI, SQLAlchemy, Pytest, etc.)
+└── README.md                # Project documentation and API guide
 ```
 
 ## Setup
