@@ -99,6 +99,62 @@ def test_update_task(client):
     assert data["priority"] == "high"
 
 
+def test_update_single_field_preserves_other_fields(client):
+    created = client.post(
+        "/tasks",
+        json={
+            "title": "Initial Title",
+            "description": "Initial Description",
+            "status": "pending",
+            "priority": "low",
+        },
+    ).json()
+    task_id = created["data"]["id"]
+
+    # 1. Update only status
+    resp_status = client.put(
+        f"/tasks/{task_id}",
+        json={"status": "in_progress"},
+    )
+    assert resp_status.status_code == 200
+    data = resp_status.json()["data"]
+    assert data["title"] == "Initial Title"
+    assert data["description"] == "Initial Description"
+    assert data["status"] == "in_progress"
+    assert data["priority"] == "low"
+
+    # Verify persistence via GET
+    stored = client.get(f"/tasks/{task_id}").json()["data"]
+    assert stored["title"] == "Initial Title"
+    assert stored["description"] == "Initial Description"
+    assert stored["status"] == "in_progress"
+    assert stored["priority"] == "low"
+
+    # 2. Update only title
+    resp_title = client.put(
+        f"/tasks/{task_id}",
+        json={"title": "Updated Title Only"},
+    )
+    assert resp_title.status_code == 200
+    data = resp_title.json()["data"]
+    assert data["title"] == "Updated Title Only"
+    assert data["description"] == "Initial Description"
+    assert data["status"] == "in_progress"
+    assert data["priority"] == "low"
+
+    # 3. Update only priority
+    resp_prio = client.put(
+        f"/tasks/{task_id}",
+        json={"priority": "high"},
+    )
+    assert resp_prio.status_code == 200
+    data = resp_prio.json()["data"]
+    assert data["title"] == "Updated Title Only"
+    assert data["description"] == "Initial Description"
+    assert data["status"] == "in_progress"
+    assert data["priority"] == "high"
+
+
 def test_get_task(client):
     created = client.post("/tasks", json={"title": "One task"}).json()
     response = client.get(f"/tasks/{created['data']['id']}")
@@ -257,6 +313,50 @@ def test_get_nonexistent_task_when_other_tasks_exist(client):
         "message": "Task not found",
         "data": None,
     }
+
+
+def test_update_and_delete_nonexistent_task_preserves_database_consistency(client):
+    task1 = client.post(
+        "/tasks",
+        json={"title": "Task 1", "description": "Desc 1", "priority": "low"},
+    ).json()["data"]
+    task2 = client.post(
+        "/tasks",
+        json={"title": "Task 2", "description": "Desc 2", "priority": "high"},
+    ).json()["data"]
+
+    # Attempt to update a non-existent task ID
+    put_resp = client.put(
+        "/tasks/9999",
+        json={"title": "Should Not Exist", "status": "completed"},
+    )
+    assert put_resp.status_code == 404
+    assert put_resp.json() == {
+        "success": False,
+        "message": "Task not found",
+        "data": None,
+    }
+
+    # Attempt to delete a non-existent task ID
+    del_resp = client.delete("/tasks/9999")
+    assert del_resp.status_code == 404
+    assert del_resp.json() == {
+        "success": False,
+        "message": "Task not found",
+        "data": None,
+    }
+
+    # Verify existing tasks in DB are completely untouched
+    all_tasks = client.get("/tasks").json()["data"]
+    assert len(all_tasks) == 2
+    assert all_tasks[0]["id"] == task1["id"]
+    assert all_tasks[0]["title"] == "Task 1"
+    assert all_tasks[0]["description"] == "Desc 1"
+    assert all_tasks[0]["priority"] == "low"
+    assert all_tasks[1]["id"] == task2["id"]
+    assert all_tasks[1]["title"] == "Task 2"
+    assert all_tasks[1]["description"] == "Desc 2"
+    assert all_tasks[1]["priority"] == "high"
 
 
 def test_create_invalid_priority(client):
