@@ -7,49 +7,52 @@ def test_get_task_not_found(client):
     assert response.status_code == 404
     assert "detail" not in response.json()
     assert response.json() == {
-        "error": "not_found",
-        "message": "Task with id 99 not found",
-        "status_code": 404,
+        "success": False,
+        "message": "Task not found",
+        "data": None,
     }
 
 
 def test_put_invalid_priority(client):
     created = client.post("/tasks", json={"title": "Valid task"}).json()
-    response = client.put(f"/tasks/{created['id']}", json={"priority": "urgent"})
+    response = client.put(f"/tasks/{created['data']['id']}", json={"priority": "urgent"})
     assert response.status_code == 422
-    data = response.json()
-    assert data["error"] == "validation_error"
-    assert data["message"] == "Invalid request data"
-    assert data["status_code"] == 422
-    assert isinstance(data["details"], list)
-    assert data["details"]
+    assert response.json() == {
+        "success": False,
+        "message": "Validation error",
+        "data": None,
+    }
 
 
 def test_put_invalid_title(client):
     created = client.post("/tasks", json={"title": "Valid task"}).json()
-    response = client.put(f"/tasks/{created['id']}", json={"title": ""})
+    response = client.put(f"/tasks/{created['data']['id']}", json={"title": ""})
     assert response.status_code == 422
-    data = response.json()
-    assert data["error"] == "validation_error"
-    assert any("title" in item["field"] for item in data["details"])
+    assert response.json() == {
+        "success": False,
+        "message": "Validation error",
+        "data": None,
+    }
 
 
 def test_invalid_task_id_type(client):
     response = client.get("/tasks/abc")
     assert response.status_code == 422
-    data = response.json()
-    assert data["error"] == "validation_error"
-    assert data["message"] == "Invalid request data"
-    assert data["status_code"] == 422
+    assert response.json() == {
+        "success": False,
+        "message": "Validation error",
+        "data": None,
+    }
 
 
 def test_missing_title_on_create(client):
     response = client.post("/tasks", json={"description": "No title"})
     assert response.status_code == 422
-    data = response.json()
-    assert data["error"] == "validation_error"
-    assert "details" in data
-    assert any("title" in item["field"] for item in data["details"])
+    assert response.json() == {
+        "success": False,
+        "message": "Validation error",
+        "data": None,
+    }
 
 
 def test_unexpected_error_hides_internal_details(client):
@@ -68,9 +71,9 @@ def test_unexpected_error_hides_internal_details(client):
     assert response.status_code == 500
     data = response.json()
     assert data == {
-        "error": "internal_server_error",
+        "success": False,
         "message": "An unexpected error occurred. Please try again later.",
-        "status_code": 500,
+        "data": None,
     }
     body = str(data).lower()
     assert secret.lower() not in body

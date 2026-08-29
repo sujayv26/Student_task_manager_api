@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.database import Base, engine, get_db
 from app.errors import register_exception_handlers, task_not_found
 from app.models import Task
-from app.schemas import TaskCreate, TaskResponse, TaskUpdate
+from app.schemas import SuccessResponse, TaskCreate, TaskResponse, TaskUpdate
 
 Base.metadata.create_all(bind=engine)
 
@@ -28,7 +28,11 @@ def root():
     return {"message": "Student Task Manager API. Visit /docs for Swagger UI."}
 
 
-@app.post("/tasks", response_model=TaskResponse, status_code=status.HTTP_201_CREATED)
+@app.post(
+    "/tasks",
+    response_model=SuccessResponse[TaskResponse],
+    status_code=status.HTTP_201_CREATED,
+)
 def create_task(task: TaskCreate, db: Session = Depends(get_db)):
     new_task = Task(
         title=task.title,
@@ -39,20 +43,29 @@ def create_task(task: TaskCreate, db: Session = Depends(get_db)):
     db.add(new_task)
     db.commit()
     db.refresh(new_task)
-    return new_task
+    return SuccessResponse(
+        message="Task created successfully",
+        data=new_task,
+    )
 
 
-@app.get("/tasks", response_model=list[TaskResponse])
+@app.get("/tasks", response_model=SuccessResponse[list[TaskResponse]])
 def get_tasks(db: Session = Depends(get_db)):
-    return db.query(Task).all()
+    return SuccessResponse(
+        message="Tasks retrieved successfully",
+        data=db.query(Task).all(),
+    )
 
 
-@app.get("/tasks/{task_id}", response_model=TaskResponse)
+@app.get("/tasks/{task_id}", response_model=SuccessResponse[TaskResponse])
 def get_task(task_id: int, db: Session = Depends(get_db)):
-    return get_task_or_404(task_id, db)
+    return SuccessResponse(
+        message="Task retrieved successfully",
+        data=get_task_or_404(task_id, db),
+    )
 
 
-@app.put("/tasks/{task_id}", response_model=TaskResponse)
+@app.put("/tasks/{task_id}", response_model=SuccessResponse[TaskResponse])
 def update_task(task_id: int, task_update: TaskUpdate, db: Session = Depends(get_db)):
     task = get_task_or_404(task_id, db)
 
@@ -70,13 +83,23 @@ def update_task(task_id: int, task_update: TaskUpdate, db: Session = Depends(get
 
     db.commit()
     db.refresh(task)
-    return task
+    return SuccessResponse(
+        message="Task updated successfully",
+        data=task,
+    )
 
 
-@app.delete("/tasks/{task_id}", status_code=status.HTTP_200_OK)
+@app.delete(
+    "/tasks/{task_id}",
+    response_model=SuccessResponse[None],
+    status_code=status.HTTP_200_OK,
+)
 def delete_task(task_id: int, db: Session = Depends(get_db)):
     task = get_task_or_404(task_id, db)
 
     db.delete(task)
     db.commit()
-    return {"message": f"Task with id {task_id} deleted successfully"}
+    return SuccessResponse(
+        message="Task deleted successfully",
+        data=None,
+    )

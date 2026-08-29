@@ -1,7 +1,9 @@
 from enum import Enum
-from typing import Optional
+from typing import Generic, Optional, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field
+
+T = TypeVar("T")
 
 
 class TaskStatus(str, Enum):
@@ -38,3 +40,15 @@ class TaskResponse(BaseModel):
     priority: TaskPriority
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class SuccessResponse(BaseModel, Generic[T]):
+    success: bool = True
+    message: str
+    data: Optional[T] = None
+
+
+class ErrorResponse(BaseModel):
+    success: bool = False
+    message: str
+    data: None = None

@@ -3,61 +3,45 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-ERROR_NAMES = {
-    400: "bad_request",
-    404: "not_found",
-    405: "method_not_allowed",
-    422: "validation_error",
-    500: "internal_server_error",
-}
 
-
-def error_body(status_code: int, message: str, details=None, error: str | None = None):
-    body = {
-        "error": error or ERROR_NAMES.get(status_code, "error"),
+def error_body(message: str):
+    return {
+        "success": False,
         "message": message,
-        "status_code": status_code,
+        "data": None,
     }
-    if details is not None:
-        body["details"] = details
-    return body
 
 
-def error_response(status_code: int, message: str, details=None, error: str | None = None):
+def error_response(status_code: int, message: str):
     return JSONResponse(
         status_code=status_code,
-        content=error_body(status_code, message, details=details, error=error),
+        content=error_body(message),
     )
 
 
-def task_not_found(task_id: int) -> HTTPException:
+def task_not_found(_task_id: int) -> HTTPException:
     return HTTPException(
         status_code=status.HTTP_404_NOT_FOUND,
-        detail=f"Task with id {task_id} not found",
+        detail="Task not found",
     )
 
 
 def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(StarletteHTTPException)
     async def http_exception_handler(_request: Request, exc: StarletteHTTPException):
-        message = exc.detail if isinstance(exc.detail, str) else "Request failed"
+        if exc.status_code == status.HTTP_404_NOT_FOUND:
+            message = "Task not found"
+        elif isinstance(exc.detail, str):
+            message = exc.detail
+        else:
+            message = "Request failed"
         return error_response(exc.status_code, message)
 
     @app.exception_handler(RequestValidationError)
-    async def validation_exception_handler(_request: Request, exc: RequestValidationError):
-        details = []
-        for err in exc.errors():
-            loc = [part for part in err.get("loc", ()) if part != "body"]
-            details.append(
-                {
-                    "field": ".".join(str(part) for part in loc) or "body",
-                    "message": err.get("msg", "Invalid value"),
-                }
-            )
+    async def validation_exception_handler(_request: Request, _exc: RequestValidationError):
         return error_response(
             status.HTTP_422_UNPROCESSABLE_ENTITY,
-            "Invalid request data",
-            details=details,
+            "Validation error",
         )
 
     @app.exception_handler(Exception)
