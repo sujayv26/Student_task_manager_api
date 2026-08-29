@@ -13,6 +13,27 @@ def test_get_task_not_found(client):
     }
 
 
+def test_get_deleted_task_returns_not_found(client):
+    created = client.post("/tasks", json={"title": "Delete me"}).json()
+    task_id = created["data"]["id"]
+
+    delete_resp = client.delete(f"/tasks/{task_id}")
+    assert delete_resp.status_code == 200
+    assert delete_resp.json() == {
+        "success": True,
+        "message": "Task deleted successfully",
+        "data": None,
+    }
+
+    get_resp = client.get(f"/tasks/{task_id}")
+    assert get_resp.status_code == 404
+    assert get_resp.json() == {
+        "success": False,
+        "message": "Task not found",
+        "data": None,
+    }
+
+
 def test_put_invalid_priority(client):
     created = client.post("/tasks", json={"title": "Valid task"}).json()
     response = client.put(f"/tasks/{created['data']['id']}", json={"priority": "urgent"})
