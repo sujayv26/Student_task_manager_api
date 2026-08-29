@@ -1,137 +1,241 @@
-# Student Task Manager
+# Student Task Manager API
 
-A small REST API built with **FastAPI** and **SQLite** for managing student tasks. It supports creating, listing, updating, and deleting tasks.
+A small REST API for managing student tasks, built using FastAPI, SQLite, SQLAlchemy, Pydantic, and Pytest.
 
-## Features
+This project was developed as part of **Automation in Software Development – Unit 2 – Assignment A1: AI Coding Assistant Practicum**.
 
-- Create a new task
-- List all tasks
-- Update an existing task
-- Delete a task
-- Input validation with Pydantic
-- Persistent storage with SQLite
+## Project Overview
+
+The Student Task Manager API provides CRUD operations for managing student tasks.
+
+Each task contains:
+
+- `id`
+- `title`
+- `description`
+- `status`
+- `priority`
+
+The API includes input validation, error handling, database persistence, and automated tests.
+
+## AI Coding Assistant Used
+
+**Tool:** Antigravity AI Coding Assistant
+
+The project was developed using an AI-powered coding assistant instead of GitHub Copilot, as required by the assignment.
+
+Three prompt engineering techniques were applied:
+
+| Technique | Usage |
+|-----------|-------|
+| **Zero-Shot Prompting** | Used for the initial project structure, CRUD endpoints, database integration, validation, and tests without providing examples. |
+| **Few-Shot Prompting** | Used to establish consistent API response and error formats by providing examples of the expected output structure. |
+| **Chain-of-Thought Prompting** | Used for step-by-step debugging of task deletion, partial updates, and database consistency edge cases. |
+
+Detailed prompts, tool responses, evaluations, and screenshots are available in the `docs/` folder.
+
+## Technologies Used
+
+- Python
+- FastAPI
+- SQLite
+- SQLAlchemy
+- Pydantic
+- Pytest
+- Uvicorn
+- Git & GitHub
 
 ## Project Structure
 
+```text
+Student_task_manager_api/
+│
+├── app/
+│   ├── __init__.py
+│   ├── database.py
+│   ├── errors.py
+│   ├── main.py
+│   ├── models.py
+│   └── schemas.py
+│
+├── tests/
+│   ├── __init__.py
+│   ├── conftest.py
+│   ├── test_api.py
+│   └── test_errors.py
+│
+├── docs/
+│   └── ...
+│
+├── .gitignore
+├── pytest.ini
+├── requirements.txt
+└── README.md
 ```
-app/
-  __init__.py
-  main.py         # FastAPI app and CRUD endpoints
-  database.py     # SQLite engine and session
-  models.py       # SQLAlchemy Task model
-  schemas.py      # Pydantic request/response schemas
-tests/
-  conftest.py     # Test client and in-memory database
-  test_api.py     # API tests
-requirements.txt
-pytest.ini
-README.md
-```
-
-## Task Fields
-
-| Field         | Type   | Allowed values                          |
-|---------------|--------|-----------------------------------------|
-| `id`          | int    | Auto-generated                          |
-| `title`       | string | Required, 1–200 characters              |
-| `description` | string | Optional, up to 1000 characters         |
-| `status`      | string | `pending`, `in_progress`, `completed`   |
-| `priority`    | string | `low`, `medium`, `high`                 |
-
-Default status is `pending`. Default priority is `medium`.
 
 ## Setup
 
-1. Create and activate a virtual environment.
+### 1. Clone the repository
 
-**Windows (PowerShell):**
+```bash
+git clone https://github.com/sujayv26/Student_task_manager_api.git
+```
+
+### 2. Navigate to the project
+
+```bash
+cd Student_task_manager_api
+```
+
+### 3. Create a virtual environment
+
+```bash
+python -m venv venv
+```
+
+### 4. Activate the virtual environment
+
+**Windows PowerShell:**
 
 ```powershell
-python -m venv venv
 .\venv\Scripts\Activate.ps1
 ```
 
-**macOS / Linux:**
+**Windows Command Prompt:**
 
-```bash
-python3 -m venv venv
-source venv/bin/activate
+```cmd
+venv\Scripts\activate
 ```
 
-2. Install dependencies:
+### 5. Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-## Run the API
+## Run the Application
 
-From the project root:
+Start the FastAPI server:
 
 ```bash
 uvicorn app.main:app --reload
 ```
 
-Then open:
+The API will run at:
 
-- API: http://127.0.0.1:8000
-- Interactive docs: http://127.0.0.1:8000/docs
+```text
+http://127.0.0.1:8000
+```
+
+## API Documentation
+
+Swagger UI:
+
+```text
+http://127.0.0.1:8000/docs
+```
+
+ReDoc:
+
+```text
+http://127.0.0.1:8000/redoc
+```
 
 ## API Endpoints
 
-| Method | Endpoint            | Description              | Success status |
-|--------|---------------------|--------------------------|----------------|
-| POST   | `/tasks`            | Create a task            | 201            |
-| GET    | `/tasks`            | List all tasks           | 200            |
-| PUT    | `/tasks/{task_id}`  | Update a task            | 200            |
-| DELETE | `/tasks/{task_id}`  | Delete a task            | 200            |
+| Method   | Endpoint           | Description              |
+| -------- | ------------------ | ------------------------ |
+| `POST`   | `/tasks`           | Create a task            |
+| `GET`    | `/tasks`           | Retrieve all tasks       |
+| `GET`    | `/tasks/{task_id}` | Retrieve a specific task |
+| `PUT`    | `/tasks/{task_id}` | Update a task            |
+| `DELETE` | `/tasks/{task_id}` | Delete a task            |
 
-### Example: create a task
+## Task Validation
 
-```bash
-curl -X POST http://127.0.0.1:8000/tasks ^
-  -H "Content-Type: application/json" ^
-  -d "{\"title\": \"Finish assignment\", \"description\": \"Submit by Friday\", \"status\": \"pending\", \"priority\": \"high\"}"
+### Status
+
+Supported values:
+
+```text
+pending
+in_progress
+completed
 ```
 
-On macOS / Linux:
+### Priority
 
-```bash
-curl -X POST http://127.0.0.1:8000/tasks \
-  -H "Content-Type: application/json" \
-  -d '{"title": "Finish assignment", "description": "Submit by Friday", "status": "pending", "priority": "high"}'
+Supported values:
+
+```text
+low
+medium
+high
 ```
 
-### Example: list tasks
+Invalid values and invalid input are rejected through validation.
 
-```bash
-curl http://127.0.0.1:8000/tasks
+## Example Request
+
+### Create a Task
+
+```http
+POST /tasks
 ```
 
-### Example: update a task
-
-```bash
-curl -X PUT http://127.0.0.1:8000/tasks/1 \
-  -H "Content-Type: application/json" \
-  -d '{"status": "in_progress"}'
+```json
+{
+  "title": "Complete assignment",
+  "description": "Finish the AI Coding Assistant assignment",
+  "status": "pending",
+  "priority": "high"
+}
 ```
 
-### Example: delete a task
+## Example Response
 
-```bash
-curl -X DELETE http://127.0.0.1:8000/tasks/1
+```json
+{
+  "success": true,
+  "message": "Task created successfully",
+  "data": {
+    "id": 1,
+    "title": "Complete assignment",
+    "description": "Finish the AI Coding Assistant assignment",
+    "status": "pending",
+    "priority": "high"
+  }
+}
 ```
 
-## Error Responses
+## Testing
 
-- **400** – PUT body has no fields to update
-- **404** – Task id does not exist
-- **422** – Invalid input (empty title, unknown status/priority, etc.)
-
-## Run Tests
+Run the complete test suite:
 
 ```bash
 pytest
 ```
 
-Tests use an in-memory SQLite database so they do not change `tasks.db`.
+The tests cover:
+
+* CRUD operations
+* Input validation
+* Error handling
+* Missing task scenarios
+* Partial task updates
+* Task deletion
+* Database consistency
+
+
+## Version Control
+
+The project was developed incrementally using Git.
+
+Separate commits were created during different stages of development to maintain the development history and demonstrate the progression of the AI-assisted implementation.
+
+## Author
+
+**Sujay V**
+
+B.Tech Computer Science Engineering  
+AI-driven DevOps
